@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice QC Console</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s;
+        }
+
+        .upload-section:hover {
+            border-color: #764ba2;
+            background: #f0f1f5;
+        }
+
+        .upload-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            margin: 20px 0;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-label {
+            background: #667eea;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .file-label:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .process-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+
+        .process-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+        }
+
+        .process-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .results-section.active {
+            display: block;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            opacity: 0.9;
+            font-size: 0.9em;
+        }
+
+        .filters {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .invoices-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .invoices-table thead {
+            background: #f8f9fa;
+        }
+
+        .invoices-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .invoices-table td {
+            padding: 15px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .invoices-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .badge-valid {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-invalid {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .errors-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .errors-list li {
+            padding: 5px 0;
+            color: #721c24;
+            font-size: 0.9em;
+        }
+
+        .errors-list li:before {
+            content: "• ";
+            font-weight: bold;
+        }
+
+        .file-list {
+            margin-top: 15px;
+            text-align: left;
+        }
+
+        .file-item {
+            background: white;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .remove-file {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .remove-file:hover {
+            background: #c82333;
+        }
+
+        @media (max-width: 768px) {
+            .summary-card {
+                grid-template-columns: 1fr;
+            }
+            
+            .invoices-table {
+                font-size: 0.9em;
+            }
+            
+            .invoices-table th, .invoices-table td {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📋 Invoice QC Console</h1>
+            <p>Extract and validate invoice data from PDFs</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Upload Section -->
+            <div class="upload-section">
+                <h2>Upload Invoice PDFs</h2>
+                <p>Select one or more PDF files to process</p>
+                
+                <div class="file-input-wrapper">
+                    <input type="file" id="fileInput" class="file-input" accept=".pdf" multiple>
+                    <label for="fileInput" class="file-label">
+                        📁 Choose PDF Files
+                    </label>
+                </div>
+
+                <div id="fileList" class="file-list"></div>
+
+                <button id="processBtn" class="process-btn" disabled>
+                    🚀 Process & Validate
+                </button>
+            </div>
+
+            <!-- Loading Section -->
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Processing invoices...</p>
+            </div>
+
+            <!-- Results Section -->
+            <div id="resultsSection" class="results-section">
+                <h2>Validation Results</h2>
+
+                <!-- Summary Card -->
+                <div class="summary-card">
+                    <div class="stat">
+                        <span class="stat-value" id="totalInvoices">0</span>
+                        <span class="stat-label">Total Invoices</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value" id="validInvoices" style="color: #d4edda;">0</span>
+                        <span class="stat-label">✅ Valid</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value" id="invalidInvoices" style="color: #f8d7da;">0</span>
+                        <span class="stat-label">❌ Invalid</span>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="filters">
+                    <button class="filter-btn active" data-filter="all">All Invoices</button>
+                    <button class="filter-btn" data-filter="valid">Valid Only</button>
+                    <button class="filter-btn" data-filter="invalid">Invalid Only</button>
+                </div>
+
+                <!-- Results Table -->
+                <table class="invoices-table">
+                    <thead>
+                        <tr>
+                            <th>Invoice Number</th>
+                            <th>Source File</th>
+                            <th>Status</th>
+                            <th>Errors</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+        
+        let selectedFiles = [];
+        let validationResults = [];
+        let currentFilter = 'all';
+
+        // File input handling
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            selectedFiles = [...selectedFiles, ...files];
+            updateFileList();
+            updateProcessButton();
+        });
+
+        function updateFileList() {
+            const fileList = document.getElementById('fileList');
+            
+            if (selectedFiles.length === 0) {
+                fileList.innerHTML = '';
+                return;
+            }
+
+            fileList.innerHTML = selectedFiles.map((file, index) => `
+                <div class="file-item">
+                    <span>📄 ${file.name}</span>
+                    <button class="remove-file" onclick="removeFile(${index})">Remove</button>
+                </div>
+            `).join('');
+        }
+
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            updateFileList();
+            updateProcessButton();
+        }
+
+        function updateProcessButton() {
+            const processBtn = document.getElementById('processBtn');
+            processBtn.disabled = selectedFiles.length === 0;
+        }
+
+        // Process button handler
+        document.getElementById('processBtn').addEventListener('click', async () => {
+            if (selectedFiles.length === 0) return;
+
+            // Show loading
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('resultsSection').classList.remove('active');
+
+            try {
+                // Create FormData
+                const formData = new FormData();
+                selectedFiles.forEach(file => {
+                    formData.append('files', file);
+                });
+
+                // Call API
+                const response = await fetch(`${API_BASE_URL}/extract-and-validate`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                // Store results
+                validationResults = data.validation_report.results;
+                
+                // Update UI
+                updateSummary(data.validation_report.summary);
+                updateResultsTable();
+                
+                // Show results
+                document.getElementById('resultsSection').classList.add('active');
+
+            } catch (error) {
+                alert(`Error processing invoices: ${error.message}`);
+                console.error(error);
+            } finally {
+                document.getElementById('loading').classList.remove('active');
+            }
+        });
+
+        function updateSummary(summary) {
+            document.getElementById('totalInvoices').textContent = summary.total_invoices;
+            document.getElementById('validInvoices').textContent = summary.valid_invoices;
+            document.getElementById('invalidInvoices').textContent = summary.invalid_invoices;
+        }
+
+        function updateResultsTable() {
+            const tbody = document.getElementById('resultsTableBody');
+            
+            const filteredResults = validationResults.filter(result => {
+                if (currentFilter === 'all') return true;
+                if (currentFilter === 'valid') return result.is_valid;
+                if (currentFilter === 'invalid') return !result.is_valid;
+                return true;
+            });
+
+            tbody.innerHTML = filteredResults.map(result => {
+                const statusBadge = result.is_valid 
+                    ? '<span class="badge badge-valid">✅ Valid</span>'
+                    : '<span class="badge badge-invalid">❌ Invalid</span>';
+
+                const errorsList = result.errors.length > 0
+                    ? `<ul class="errors-list">
+                        ${result.errors.map(err => `<li>[${err.rule}] ${err.message}</li>`).join('')}
+                       </ul>`
+                    : '<span style="color: #28a745;">No errors</span>';
+
+                return `
+                    <tr>
+                        <td><strong>${result.invoice_id}</strong></td>
+                        <td>${result.source_file || 'N/A'}</td>
+                        <td>${statusBadge}</td>
+                        <td>${errorsList}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // Update active state
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                
+                // Update filter and table
+                currentFilter = e.target.dataset.filter;
+                updateResultsTable();
+            });
+        });
+    </script>
+</body>
+</html>
