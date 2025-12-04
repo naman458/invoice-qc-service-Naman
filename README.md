@@ -526,6 +526,6 @@ MIT License - Feel free to use for educational purposes.
 
 ## Contact
 
-[Your Name] - [Your Email]
+Naman Maheshwari - naman.mah458@gmail.com
 
-GitHub: [@yourusername](https://github.com/yourusername)
+GitHub: [@yourusername](https://github.com/naman458)
